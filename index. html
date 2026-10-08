@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CUET PG English — Practice Hub</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
+
+header{background:linear-gradient(135deg,#1e293b,#3b82f6);color:#fff;padding:48px 24px 40px;text-align:center}
+header h1{font-size:2rem;letter-spacing:-.5px;margin-bottom:8px}
+header p{opacity:.85}
+.stats{display:flex;gap:16px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+.stat{background:rgba(255,255,255,.14);padding:10px 22px;border-radius:10px}
+.stat b{display:block;font-size:1.4rem}
+.stat span{font-size:.72rem;opacity:.85;text-transform:uppercase;letter-spacing:.6px}
+
+.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 60px}
+
+#search{width:100%;padding:14px 18px;border:2px solid #e2e8f0;border-radius:12px;
+  font-size:1rem;outline:none;transition:.2s;margin-bottom:16px}
+#search:focus{border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.12)}
+
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px}
+.chip{padding:8px 16px;border-radius:999px;border:2px solid #e2e8f0;background:#fff;
+  cursor:pointer;font-size:.85rem;font-weight:600;color:#64748b;transition:.2s}
+.chip:hover{border-color:#3b82f6;color:#3b82f6}
+.chip.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.card{background:#fff;border-radius:16px;padding:22px;border:1px solid #e2e8f0;
+  display:flex;flex-direction:column;transition:.25s;position:relative;overflow:hidden}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(15,23,42,.1)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,#3b82f6,#8b5cf6)}
+.tag{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:#3b82f6;background:#eff6ff;padding:5px 10px;
+  border-radius:6px;margin-bottom:12px;width:fit-content}
+.card h3{font-size:1.15rem;margin-bottom:8px;line-height:1.35}
+.card p{font-size:.9rem;color:#64748b;line-height:1.55;flex:1;margin-bottom:16px}
+.meta{display:flex;gap:14px;font-size:.8rem;color:#64748b;margin-bottom:16px;flex-wrap:wrap}
+.btn{display:block;text-align:center;text-decoration:none;padding:12px;background:#3b82f6;
+  color:#fff;border-radius:10px;font-weight:600;font-size:.95rem;transition:.2s}
+.btn:hover{background:#2563eb}
+.badge{position:absolute;top:16px;right:16px;font-size:.7rem;font-weight:700;
+  padding:4px 10px;border-radius:999px;background:#dcfce7;color:#166534}
+.empty{text-align:center;padding:60px 20px;color:#64748b;grid-column:1/-1}
+footer{text-align:center;padding:30px;color:#64748b;font-size:.85rem}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CUET PG English — Practice Hub</h1>
+  <p>LAQP01 · Topic-wise quizzes with instant scoring</p>
+  <div class="stats">
+    <div class="stat"><b id="sQuizzes">0</b><span>Quizzes</span></div>
+    <div class="stat"><b id="sQuestions">0</b><span>Questions</span></div>
+    <div class="stat"><b id="sDone">0</b><span>Completed</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <input type="text" id="search" placeholder="Search quizzes by title, topic or keyword...">
+  <div class="filters" id="filters"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<footer>+4 / −1 marking · Built for CUET PG English (LAQP01)</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   ADD NEW QUIZZES HERE — copy one block, edit, done.
+   The "file" value MUST match QUIZ_KEY inside that quiz's HTML.
+   ═══════════════════════════════════════════════════════════ */
+const quizzes = [
+  {
+    title: "Literary Terms & Devices",
+    file: "quizzes/literary-terms.html",
+    category: "Literary Terms",
+    questions: 10,
+    difficulty: "Easy",
+    description: "Coleridge's Fancy vs Imagination, Intentional Fallacy, figures of speech and core critical vocabulary."
+  },
+  {
+    title: "Indian Writing in English",
+    file: "quizzes/indian-writing.html",
+    category: "Indian Writing",
+    questions: 10,
+    difficulty: "Medium",
+    description: "Major novelists, poets and texts from Rajmohan's Wife to post-independence poetry."
+  },
+  {
+    title: "Literary Criticism & Theory",
+    file: "quizzes/criticism-theory.html",
+    category: "Criticism & Theory",
+    questions: 10,
+    difficulty: "Hard",
+    description: "Aristotle to Jameson — classical criticism, New Criticism, Marxism and theoretical movements."
+  },
+  {
+    title: "Authors, Works & Chronology",
+    file: "quizzes/authors-chronology.html",
+    category: "History of Literature",
+    questions: 10,
+    difficulty: "Medium",
+    description: "Author–work matching, period identification and chronological sequencing."
+  }
+];
+/* ═══════════════════════════════════════════════════════════ */
+
+const grid = document.getElementById('grid');
+const filtersEl = document.getElementById('filters');
+const searchEl = document.getElementById('search');
+let activeCategory = 'All';
+
+const categories = ['All', ...new Set(quizzes.map(q => q.category))];
+
+document.getElementById('sQuizzes').textContent = quizzes.length;
+document.getElementById('sQuestions').textContent = quizzes.reduce((s,q)=>s+q.questions,0);
+document.getElementById('sDone').textContent =
+  quizzes.filter(q => localStorage.getItem('score::' + q.file)).length;
+
+categories.forEach(cat => {
+  const b = document.createElement('button');
+  b.className = 'chip' + (cat === 'All' ? ' active' : '');
+  b.textContent = cat;
+  b.onclick = () => {
+    activeCategory = cat;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    b.classList.add('active');
+    render();
+  };
+  filtersEl.appendChild(b);
+});
+
+function render() {
+  const term = searchEl.value.toLowerCase().trim();
+  const list = quizzes.filter(q => {
+    const matchCat = activeCategory === 'All' || q.category === activeCategory;
+    const matchTerm = !term ||
+      q.title.toLowerCase().includes(term) ||
+      q.description.toLowerCase().includes(term) ||
+      q.category.toLowerCase().includes(term);
+    return matchCat && matchTerm;
+  });
+
+  grid.innerHTML = '';
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty">No quizzes match your search.</div>';
+    return;
+  }
+
+  list.forEach(q => {
+    const saved = localStorage.getItem('score::' + q.file);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      ${saved ? '<div class="badge">✓ ' + saved + '</div>' : ''}
+      <div class="tag">${q.category}</div>
+      <h3>${q.title}</h3>
+      <p>${q.description}</p>
+      <div class="meta">
+        <span>📝 ${q.questions} questions</span>
+        <span>🎯 ${q.difficulty}</span>
+      </div>
+      <a class="btn" href="${q.file}">Start Quiz →</a>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+searchEl.addEventListener('input', render);
+render();
+</script>
+</body>
+</html>
